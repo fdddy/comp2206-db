@@ -1,0 +1,37 @@
+syntax = "proto3";
+package db;
+option go_package = "github.com/plzfgme/infosec-competition-202206/db";
+
+message Document { bytes binary = 1; }
+
+message Token { bytes binary = 1; }
+
+message InsertQuery {
+  repeated Document docs = 1;
+  repeated Token tkns = 2;
+}
+
+message InsertResponse { string msg = 1; }
+
+message PreFindQuery { repeated Token tkns = 1; }
+
+message PreFindResponse {
+  string msg = 1;
+  repeated Token tkns = 2;
+}
+
+message FindQuery {
+  repeated string fields = 1;
+  repeated Token tkns = 2;
+}
+
+message FindResponse {
+  string msg = 1;
+  repeated Document docs = 2;
+}
+
+service ServerService {
+  rpc Insert(InsertQuery) returns (InsertResponse);
+  rpc PreFind(PreFindQuery) returns (PreFindResponse);
+  rpc Find(FindQuery) returns (FindResponse);
+}
