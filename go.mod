@@ -29,6 +29,7 @@ require (
 	github.com/lukechampine/fastxor v0.0.0-20210322201628-b664bed5a5cc // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/plzfgme/consprf v0.0.0-20220610045958-9b1b5585a380 // indirect
+	github.com/tidwall/pretty v1.1.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.0.2 // indirect
 	github.com/xdg-go/stringprep v1.0.2 // indirect
