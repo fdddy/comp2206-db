@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plzfgme/infosec-competition-202206-v2/db"
+	"infosec-competition-202206-wails/db"
+
 	"google.golang.org/grpc"
 )
 

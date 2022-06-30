@@ -4,7 +4,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/plzfgme/infosec-competition-202206-v2/db"
+	"infosec-competition-202206-wails/db"
+
 	flag "github.com/spf13/pflag"
 	"google.golang.org/grpc"
 )
