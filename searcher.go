@@ -22,12 +22,14 @@ type Searcher struct {
 	conn          *grpc.ClientConn
 	client        ServerServiceClient
 	config        *SearcherConfig
+	logger        Logger
 }
 
 type SearcherConfig struct {
 	SetList    []string
 	Keys       *DelegatedKeys
 	ServerAddr string
+	Logger     Logger
 }
 
 func ReadSearcherConfig(path string) (*SearcherConfig, error) {
@@ -63,6 +65,7 @@ func NewSearcher(config *SearcherConfig) (*Searcher, error) {
 		conn:          conn,
 		client:        client,
 		config:        config,
+		logger:        config.Logger,
 	}, nil
 }
 

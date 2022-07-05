@@ -27,12 +27,14 @@ type Owner struct {
 	conn       *grpc.ClientConn
 	client     ServerServiceClient
 	config     *OwnerConfig
+	logger     Logger
 }
 
 type OwnerConfig struct {
 	StorePath  string   `json:"store_path,omitempty"`
 	SetList    []string `json:"set_list,omitempty"`
 	ServerAddr string   `json:"server_addr,omitempty"`
+	Logger     Logger
 }
 
 func ReadOwnerConfig(path string) (*OwnerConfig, error) {
@@ -96,6 +98,7 @@ func NewOwner(config *OwnerConfig) (*Owner, error) {
 		conn:       conn,
 		client:     client,
 		config:     config,
+		logger:     config.Logger,
 	}, err
 }
 
@@ -165,6 +168,7 @@ func (owner *Owner) Insert(ctx context.Context, recs []*Record) error {
 		}
 	}
 
+	owner.logger.Info("Inserting records")
 	res, err := owner.client.Insert(ctx, &InsertQuery{
 		Tkns: tkns,
 		Docs: docs,
