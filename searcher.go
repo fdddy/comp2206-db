@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -93,6 +94,9 @@ func (searcher *Searcher) FindA(ctx context.Context, set string, userId string, 
 	}
 	findTkns := make([]*Token, 0)
 	preResTkns := preFindRes.GetTkns()
+	if searcher.logger != nil {
+		searcher.logger.Info("生成查询陷门中")
+	}
 	for i := range preResTkns {
 		if preResTkns[i].GetBinary() == nil {
 			continue
@@ -112,16 +116,33 @@ func (searcher *Searcher) FindA(ctx context.Context, set string, userId string, 
 		}
 		findTkns = append(findTkns, &Token{Binary: b})
 	}
+	if searcher.logger != nil {
+		searcher.logger.Info("生成查询陷门: " + fmt.Sprintf("%v", findTkns))
+	}
+
 	findQ := &FindQuery{
 		Fields: []string{"Location", "Time"},
 		Tkns:   findTkns,
 	}
+	if searcher.logger != nil {
+		searcher.logger.Info("查询中")
+	}
 	findRes, err := searcher.client.Find(ctx, findQ)
 	if err != nil {
+		if searcher.logger != nil {
+			searcher.logger.Error("查询失败: " + err.Error())
+		}
 		return nil, err
 	} else if findRes.GetMsg() != "Ok" {
+		if searcher.logger != nil {
+			searcher.logger.Error("查询失败: " + findRes.GetMsg())
+		}
 		return nil, errors.New(findRes.GetMsg())
 	}
+	if searcher.logger != nil {
+		searcher.logger.Info("查询成功")
+	}
+
 	bDocs := findRes.GetDocs()
 	results := make([]*FindAResult, len(bDocs))
 	for i, bDoc := range bDocs {
@@ -129,6 +150,9 @@ func (searcher *Searcher) FindA(ctx context.Context, set string, userId string, 
 		err := bson.Unmarshal(bDoc.GetBinary(), doc)
 		if err != nil {
 			return nil, err
+		}
+		if searcher.logger != nil {
+			searcher.logger.Info("加密结果: " + fmt.Sprintf("%v", doc))
 		}
 		cLoc := &abe.FAMECipher{}
 		json.Unmarshal(doc["Location"].(primitive.Binary).Data, cLoc)
@@ -144,6 +168,9 @@ func (searcher *Searcher) FindA(ctx context.Context, set string, userId string, 
 		results[i] = &FindAResult{
 			Location: loc,
 			Time:     t,
+		}
+		if searcher.logger != nil {
+			searcher.logger.Info("解密结果: " + fmt.Sprintf("%v", results[i]))
 		}
 	}
 	return results, nil
