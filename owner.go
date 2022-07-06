@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -111,6 +112,10 @@ func (owner *Owner) Insert(ctx context.Context, recs []*Record) error {
 	docs := make([]*Document, len(recs))
 	tkns := make([]*Token, 0)
 	for i, rec := range recs {
+		if owner.logger != nil {
+			owner.logger.Info(fmt.Sprintf("正在加密记录 %v", rec))
+		}
+
 		newRec := bson.M{}
 		objId := primitive.NewObjectID()
 		newRec["_id"] = objId
@@ -159,24 +164,41 @@ func (owner *Owner) Insert(ctx context.Context, recs []*Record) error {
 			return err
 		}
 		newRec["Set"] = bSet
+
+		if owner.logger != nil {
+			owner.logger.Info(fmt.Sprintf("加密后的记录 %v", newRec))
+		}
+
 		bytesRec, err := bson.Marshal(newRec)
 		if err != nil {
 			return err
 		}
+
 		docs[i] = &Document{
 			Binary: bytesRec,
 		}
 	}
 
-	owner.logger.Info("Inserting records")
+	if owner.logger != nil {
+		owner.logger.Info("插入记录中")
+	}
 	res, err := owner.client.Insert(ctx, &InsertQuery{
 		Tkns: tkns,
 		Docs: docs,
 	})
 	if err != nil {
+		if owner.logger != nil {
+			owner.logger.Error("插入记录失败，错误：" + err.Error())
+		}
 		return err
 	} else if res.Msg != "Ok" {
+		if owner.logger != nil {
+			owner.logger.Error("插入记录失败，错误：" + res.Msg)
+		}
 		return errors.New(res.Msg)
+	}
+	if owner.logger != nil {
+		owner.logger.Info("插入记录成功")
 	}
 
 	return nil
@@ -188,7 +210,11 @@ func (owner *Owner) FindB(ctx context.Context, set string, loc string, timeA, ti
 	for i, tKW := range tKWs {
 		kws[i] = []byte("B:" + loc + ":" + tKW)
 	}
+
 	findTkns := make([]*Token, 0)
+	if owner.logger != nil {
+		owner.logger.Info("生成查询陷门中")
+	}
 	for i := range kws {
 		searchTkn, err := owner.mfastOwner.GenSearchTkn(set, kws[i])
 		if err != nil {
@@ -202,16 +228,33 @@ func (owner *Owner) FindB(ctx context.Context, set string, loc string, timeA, ti
 		}
 		findTkns = append(findTkns, &Token{Binary: b})
 	}
+	if owner.logger != nil {
+		owner.logger.Info("生成查询陷门: " + fmt.Sprintf("%v", findTkns))
+	}
+
 	findQ := &FindQuery{
 		Fields: []string{"UserId"},
 		Tkns:   findTkns,
 	}
+	if owner.logger != nil {
+		owner.logger.Info("查询记录中")
+	}
 	findRes, err := owner.client.Find(ctx, findQ)
 	if err != nil {
+		if owner.logger != nil {
+			owner.logger.Error("查询记录失败，错误：" + err.Error())
+		}
 		return nil, err
 	} else if findRes.GetMsg() != "Ok" {
+		if owner.logger != nil {
+			owner.logger.Error("查询记录失败，错误：" + findRes.GetMsg())
+		}
 		return nil, errors.New(findRes.GetMsg())
 	}
+	if owner.logger != nil {
+		owner.logger.Info("查询记录成功")
+	}
+
 	bDocs := findRes.GetDocs()
 	results := make([]*FindBResult, len(bDocs))
 	for i, bDoc := range bDocs {
@@ -219,6 +262,9 @@ func (owner *Owner) FindB(ctx context.Context, set string, loc string, timeA, ti
 		err := bson.Unmarshal(bDoc.GetBinary(), doc)
 		if err != nil {
 			return nil, err
+		}
+		if owner.logger != nil {
+			owner.logger.Info(fmt.Sprintf("加密记录 %v", doc))
 		}
 		cUserId := &abe.FAMECipher{}
 		json.Unmarshal(doc["UserId"].(primitive.Binary).Data, cUserId)
@@ -231,6 +277,9 @@ func (owner *Owner) FindB(ctx context.Context, set string, loc string, timeA, ti
 		results[i] = &FindBResult{
 			UserId: userId,
 		}
+		if owner.logger != nil {
+			owner.logger.Info("解密后的记录：" + fmt.Sprintf("%v", results[i]))
+		}
 	}
 	return results, nil
 }
@@ -240,10 +289,12 @@ func (owner *Owner) DelegateKeys(set string) (*DelegatedKeys, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	mfastKeys, err := owner.mfastOwner.DelegateKeys(set)
 	if err != nil {
 		return nil, err
 	}
+
 	return &DelegatedKeys{
 		Set:       set,
 		MFastKeys: mfastKeys,
