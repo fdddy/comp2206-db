@@ -1,4 +1,4 @@
-module infosec-competition-202206-wails/db
+module comp2206-db
 
 go 1.18
 

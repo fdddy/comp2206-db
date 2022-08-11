@@ -35,7 +35,7 @@ type OwnerConfig struct {
 	StorePath  string   `json:"store_path,omitempty"`
 	SetList    []string `json:"set_list,omitempty"`
 	ServerAddr string   `json:"server_addr,omitempty"`
-	Logger     Logger
+	Logger     Logger   `json:"-"`
 }
 
 func ReadOwnerConfig(path string) (*OwnerConfig, error) {
@@ -285,7 +285,7 @@ func (owner *Owner) FindB(ctx context.Context, set string, loc string, timeA, ti
 }
 
 func (owner *Owner) DelegateKeys(set string) (*DelegatedKeys, error) {
-	abeAttrK, err := owner.aBE.GenerateAttribKeys(owner.config.SetList, owner.keys.ABESK)
+	abeAttrK, err := owner.aBE.GenerateAttribKeys([]string{set}, owner.keys.ABESK)
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +313,7 @@ func (owner *Owner) GenSearcherConfig(set string) (string, error) {
 		Keys:       dk,
 		ServerAddr: owner.config.ServerAddr,
 	}
-	jsonCfg, err := json.Marshal(cfg)
+	jsonCfg, err := json.MarshalIndent(cfg, "", " ")
 	if err != nil {
 		return "", err
 	}

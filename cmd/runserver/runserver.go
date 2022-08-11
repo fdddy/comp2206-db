@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 
-	"infosec-competition-202206-wails/db"
+	db "comp2206-db"
 
 	flag "github.com/spf13/pflag"
 	"google.golang.org/grpc"
