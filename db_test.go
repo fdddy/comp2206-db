@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"infosec-competition-202206-wails/db"
+	db "comp2206-db"
 
 	"google.golang.org/grpc"
 )
