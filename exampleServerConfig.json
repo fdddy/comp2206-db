@@ -1,7 +1,7 @@
 {
   "store_path": "tmp/server",
   "mongo_db_config": {
-    "uri": "mongodb://gytadmin:123456@localhost:27017",
+    "uri": "mongodb://root:example@mongo:27017",
     "db_name": "compdb",
     "collection_name": "db"
   }
