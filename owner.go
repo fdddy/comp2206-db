@@ -284,6 +284,90 @@ func (owner *Owner) FindB(ctx context.Context, set string, loc string, timeA, ti
 	return results, nil
 }
 
+func (owner *Owner) FindB2(ctx context.Context, set string, loc string, timeA, timeB time.Time) ([]*FindB2Result, error) {
+	tKWs := getBRCKWs(uint64(timeA.Unix()), uint64(timeB.Unix()))
+	kws := make([][]byte, len(tKWs))
+	for i, tKW := range tKWs {
+		kws[i] = []byte("B:" + loc + ":" + tKW)
+	}
+
+	findTkns := make([]*Token, 0)
+	if owner.logger != nil {
+		owner.logger.Info("生成查询陷门中")
+	}
+	for i := range kws {
+		searchTkn, err := owner.mfastOwner.GenSearchTkn(set, kws[i])
+		if err != nil {
+			return nil, err
+		} else if searchTkn == nil {
+			continue
+		}
+		b, err := bson.Marshal(searchTkn)
+		if err != nil {
+			return nil, err
+		}
+		findTkns = append(findTkns, &Token{Binary: b})
+	}
+	if owner.logger != nil {
+		owner.logger.Info("生成查询陷门: " + fmt.Sprintf("%v", findTkns))
+	}
+
+	findQ := &FindQuery{
+		Fields: []string{"UserId", "Set"},
+		Tkns:   findTkns,
+	}
+	if owner.logger != nil {
+		owner.logger.Info("查询记录中")
+	}
+	findRes, err := owner.client.Find(ctx, findQ)
+	if err != nil {
+		if owner.logger != nil {
+			owner.logger.Error("查询记录失败，错误：" + err.Error())
+		}
+		return nil, err
+	} else if findRes.GetMsg() != "Ok" {
+		if owner.logger != nil {
+			owner.logger.Error("查询记录失败，错误：" + findRes.GetMsg())
+		}
+		return nil, errors.New(findRes.GetMsg())
+	}
+	if owner.logger != nil {
+		owner.logger.Info("查询记录成功")
+	}
+
+	bDocs := findRes.GetDocs()
+	results := make([]*FindB2Result, len(bDocs))
+	for i, bDoc := range bDocs {
+		doc := bson.M{}
+		err := bson.Unmarshal(bDoc.GetBinary(), doc)
+		if err != nil {
+			return nil, err
+		}
+		if owner.logger != nil {
+			owner.logger.Info(fmt.Sprintf("加密记录 %v", doc))
+		}
+		cUserId := &abe.FAMECipher{}
+		json.Unmarshal(doc["UserId"].(primitive.Binary).Data, cUserId)
+		cSet := &abe.FAMECipher{}
+		json.Unmarshal(doc["Set"].(primitive.Binary).Data, cSet)
+		abeAttrK, err := owner.aBE.GenerateAttribKeys([]string{set}, owner.keys.ABESK)
+		if err != nil {
+			return nil, err
+		}
+		userId, _ := owner.aBE.Decrypt(cUserId, abeAttrK, owner.keys.ABEPK)
+		set, _ := owner.aBE.Decrypt(cSet, abeAttrK, owner.keys.ABEPK)
+
+		results[i] = &FindB2Result{
+			UserId: userId,
+			Set:    set,
+		}
+		if owner.logger != nil {
+			owner.logger.Info("解密后的记录：" + fmt.Sprintf("%v", results[i]))
+		}
+	}
+	return results, nil
+}
+
 func (owner *Owner) DelegateKeys(set string) (*DelegatedKeys, error) {
 	abeAttrK, err := owner.aBE.GenerateAttribKeys([]string{set}, owner.keys.ABESK)
 	if err != nil {

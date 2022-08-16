@@ -23,6 +23,11 @@ type FindBResult struct {
 	UserId string
 }
 
+type FindB2Result struct {
+	UserId string
+	Set    string
+}
+
 type DelegatedKeys struct {
 	Set       string
 	MFastKeys *mfast.DelegatedKeys
