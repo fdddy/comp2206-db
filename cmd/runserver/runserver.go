@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"net"
 
 	db "comp2206-db"
@@ -24,7 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 	lis, _ := net.Listen("tcp", *addr)
-	s := grpc.NewServer()
+	s := grpc.NewServer(grpc.MaxCallRecvMsgSize(math.MaxInt), grpc.MaxCallSendMsgSize(math.MaxInt))
 	db.RegisterServerServiceServer(s, server)
 	log.Print("server running...")
 	log.Fatal(s.Serve(lis))

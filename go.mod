@@ -25,6 +25,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/flatbuffers v2.0.6+incompatible // indirect
+	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/klauspost/compress v1.15.6 // indirect
 	github.com/lukechampine/fastxor v0.0.0-20210322201628-b664bed5a5cc // indirect
 	github.com/pkg/errors v0.9.1 // indirect
