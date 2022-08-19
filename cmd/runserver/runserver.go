@@ -25,7 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 	lis, _ := net.Listen("tcp", *addr)
-	s := grpc.NewServer(grpc.MaxCallRecvMsgSize(math.MaxInt), grpc.MaxCallSendMsgSize(math.MaxInt))
+	s := grpc.NewServer(grpc.MaxRecvMsgSize(math.MaxInt), grpc.MaxSendMsgSize(math.MaxInt))
 	db.RegisterServerServiceServer(s, server)
 	log.Print("server running...")
 	log.Fatal(s.Serve(lis))
